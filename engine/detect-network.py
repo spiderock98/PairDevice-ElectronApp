@@ -14,20 +14,43 @@
 # process.wait()
 # print(process)
 import subprocess
+import sys
 
-result2 = subprocess.check_output(["netsh", "wlan", "show", "network"])
-result2 = result2.decode("latin1") # needed in python 3
-result2 = result2.replace("\r","")
-ls = result2.split("\n")
-ls = ls[4:]
-dctAroundSSIDs = dict()
-x = 0
-while x < len(ls)-5:
-    if x % 5 == 0:
-        ssid = ls[x].split(': ')
-        # dctAroundSSIDs[str(x)] = ssid[1]
-        print(ssid[1])
-    x += 1
+if sys.platform.startswith('win'):
+    resultWin = subprocess.check_output(["netsh", "wlan", "show", "network"])
+    resultWin = resultWin.decode("latin1")  # needed in python 3
+    resultWin = resultWin.replace("\r", "")
+    lstWin = resultWin.split("\n")
+    lstWin = lstWin[4:]
+    dctAroundSSIDs = dict()
+    count = 0
+    while count < len(lstWin)-5:
+        if count % 5 == 0:
+            ssid = lstWin[count].split(': ')
+            # dctAroundSSIDs[str(count)] = ssid[1]
+            print(ssid[1])
+        count += 1
+elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+    # this excludes your current terminal "/dev/tty"
+    resultLinux = subprocess.check_output(["nmcli", "device", "wifi"])
+    resultLinux = resultLinux.decode("latin1") # needed in python 3
+    resultLinux = resultLinux.replace("\r","")
+    lstLinux = resultLinux.split("\n")
+    lstLinux = lstLinux[1:]
+    for wifi in lstLinux:
+        # wifi = wifi.split('     ')
+        # wifi = wifi.split(' ')
+        wifi = wifi[7:wifi.find('Infra')]
+        try:
+            print(wifi)
+        except:
+            pass
+elif sys.platform.startswith('darwin'):
+    pass
+else:
+    raise EnvironmentError('Unsupported platform')
+
+
 # print(dctAroundSSIDs)
 
 
