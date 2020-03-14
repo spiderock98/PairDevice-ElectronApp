@@ -19,6 +19,7 @@ function createWindow() {
   })
   let content = mainWindow.webContents
   content.loadURL('http://localhost:8080/')
+  // content.loadURL('http://115.77.89.217:8080/')
 
 
   // content.on('did-finish-load', () => {
@@ -142,6 +143,13 @@ function createWindow() {
         console.log('[INFO] Suddenly Stopped >> Recovery .ino File');
       }
     })
+    fs.copyFile(`${path.join(__dirname, "tmp", "ArduinoBuilder-Recovery.ino")}`, `${path.join(__dirname, "arduino-cli_0.9.0_Windows_64bit", "BuilderWindows", "BuilderWindows.ino")}`, (err) => {
+      if (err) console.log(err)
+      else {
+        console.log('[INFO] Suddenly Stopped >> Recovery .ino File');
+      }
+    })
+
     mainWindow = null
   })
 

@@ -17,11 +17,11 @@
   "author": "GitHub",
   "license": "CC0-1.0",
   "devDependencies": {
-    "electron": "^8.0.3"
+    "electron": "^8.1.1"
   },
   "dependencies": {
     "jquery": "^3.4.1",
     "python-shell": "^1.0.8",
-    "sweetalert2": "^9.8.2"
+    "sweetalert2": "^9.10.0"
   }
 }
