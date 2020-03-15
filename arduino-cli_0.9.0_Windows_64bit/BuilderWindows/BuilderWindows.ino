@@ -5,8 +5,8 @@
 #define STASSID "taikhoan"
 #define STAPSK "matkhau"
 #define UID "dinhdanh"
-// #define HOST "192.168.1.3" //HOME local ip
-#define HOST "116.102.7.90" //HOME public ip
+// #define HOST "192.168.1.2" //HOME local ip
+#define HOST "171.233.31.91" //HOME public ip
 // #define HOST "127.0.0.1" // UTC2
 // #define HOST "192.168.1.234" // UTC2
 
