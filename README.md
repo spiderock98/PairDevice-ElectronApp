@@ -16,8 +16,7 @@ You can learn more about each of these components within the [Quick Start Guide]
 
 ## Prerequires
 
-- Python 3.7.7
-- pip install pyserial
+- pip3 install -r requirement.txt
 
 ## To Use
 

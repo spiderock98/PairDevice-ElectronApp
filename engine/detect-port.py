@@ -11,7 +11,6 @@ elif sys.platform.startswith('darwin'):
     ports = glob.glob('/dev/tty.*')
 else:
     raise EnvironmentError('Unsupported platform')
-
 for port in ports:
     try:
         s = serial.Serial(port)
