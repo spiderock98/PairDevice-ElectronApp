@@ -24,6 +24,18 @@ function getCurrentUID() {
   })
 }
 
+// function getCurrentPhysicalID() {
+//   return new Promise(resolve => {
+//     $.ajax({
+//       url: "/auth/getCurrentUID",
+//       method: "POST",
+//       success: (uid) => {
+//         resolve(uid)
+//       }
+//     })
+//   })
+// }
+
 function detectSSIDs() {
   let opts = {
     scriptPath: path.join(__dirname, '/engine/'),
@@ -98,13 +110,15 @@ window.addEventListener('DOMContentLoaded', () => {
 
   $("#formDevice").on('submit', async (event) => {
     event.preventDefault()
-    // DONE: ssid is < input > or < select >
     let ssid = $('#formDevice').find("input[name='ssid']").val() || $('#formDevice').find("select[name='ssid']").val()
     let psk = $('#formDevice').find("input[name='psk']").val()
+    let name = $('#formDevice').find("input[name='name']").val()
     let baud = $('#formDevice').find("select[name='baud']").val()
     let port = $('#formDevice').find("select[name='port']").val()
-    let esptoolPath = path.join(__dirname, 'esptool', 'esptool.py')
+
+    // let esptoolPath = path.join(__dirname, 'esptool', 'esptool.py')
     let uid = await getCurrentUID()
+
 
     // let buildFolder = `${path.join(__dirname, 'BuilderLinux')}`
     // let fileName = 'BuilderLinux.ino'
@@ -119,12 +133,13 @@ window.addEventListener('DOMContentLoaded', () => {
     let configPath = `${path.join(__dirname, "config", "arduino-cli.yaml")}`
     let binPath = `${path.join(buildFolder, 'build', `${fileName}.bin`)}`
 
-    console.log('[INFO] Editing .ino info');
+    console.log('[INFO] Editing .ino file');
 
     fs.readFile(inoPath, { encoding: 'utf-8' }, (err, data) => {
       if (err) { console.log('[ErrInfo] ', err); return; }
       let oriData = data
-      let replaceData = oriData.replace('taikhoan', ssid).replace('matkhau', psk).replace('dinhdanh', uid)
+      let replaceData = oriData.replace('taikhoan', ssid).replace('matkhau', psk).replace('dinhdanh', uid).replace('physicalID', name)
+
       fs.writeFile(inoPath, replaceData, err => {
         if (err) { console.log('[ErrInfo] ', err); return; }
 
@@ -149,7 +164,7 @@ window.addEventListener('DOMContentLoaded', () => {
         terminalBuild.stdout.on('data', (data) => {
           countOut = countOut + 1
           console.log(`stdout[${countOut}]: ${data}`)
-          $("#progressCompiler").attr('style', `width: ${countOut / 98 * 100}%`)
+          $("#progressCompiler").attr('style', `width: ${countOut / 125 * 100}%`)
           // document.getElementById('compilerLog').innerHTML = data
         });
         terminalBuild.stderr.on('data', (data) => {
