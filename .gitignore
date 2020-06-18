@@ -110,7 +110,6 @@ dist/
 .dynamodb/
 
 # Temporary folders
-tmp/
 temp/
 
 ### Python ###
