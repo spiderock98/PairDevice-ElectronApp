@@ -18,7 +18,7 @@ function createWindow() {
     }
   })
   let content = mainWindow.webContents
-  content.loadURL('http://localhost:8080/')
+  content.loadURL('http://localhost:8880/')
   // content.loadURL('http://171.233.31.91:8080/')
 
 
