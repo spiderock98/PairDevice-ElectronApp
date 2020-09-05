@@ -1,9 +1,3 @@
-
-mdpreview-win32-x64/
-ArduinoBuilder/
-BuilderLinux/
-esptool/
-
 # Created by https://www.gitignore.io/api/web,node,python,visualstudiocode
 # Edit at https://www.gitignore.io/?templates=web,node,python,visualstudiocode
 

@@ -1,1 +1,0 @@
-electron-packager . mdpreview --platform=win32 --version
