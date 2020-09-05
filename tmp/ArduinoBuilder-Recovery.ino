@@ -5,11 +5,11 @@
 #include <WebSocketsClient.h>
 #include <SocketIOclient.h>
 
-#define STASSID "VIETTEL"
-#define STAPSK "Sherlock21vtag"
+#define STASSID "taikhoan"
+#define STAPSK "matkhau"
 // bApb0Ypwg5YszGanWOBKre39zlg1
-#define UID "bApb0Ypwg5YszGanWOBKre39zlg1"
-#define NODENAME "DHT11"
+#define UID "dinhdanh"
+#define NODENAME "physicalID"
 #define HOST "192.168.1.3" //HOME local ip
 #define PORT 8880
 
