@@ -128,15 +128,14 @@ window.addEventListener("DOMContentLoaded", () => {
     let port = $("#formDevice").find("select[name='port']").val();
     let board = $("#formDevice").find("select[name='board']").val();
     let uid = await getCurrentUID();
-    let buildFolderPath = `${path.join(__dirname, "ArduinoBuilder")}`;
-    let inoPath = `${path.join(buildFolderPath, "ArduinoBuilder.ino")}`;
-    let customLibPath = `${path.join(buildFolderPath, "user_libraries")}`;
+    let buildFolderPath = path.join(__dirname, "ArduinoBuilder");
+    let inoPath = path.join(buildFolderPath, "ArduinoBuilder.ino");
+    let customLibPath = path.join(buildFolderPath, "user_libraries");
 
     console.log("[INFO] Editing ino file ...");
 
     let espSrcCode = fs.readFileSync(inoPath, { encoding: "utf-8" });
-    let oriData = espSrcCode;
-    let replaceData = oriData
+    let replaceData = espSrcCode
       .replace("taikhoan", ssid)
       .replace("matkhau", psk)
       .replace("dinhdanh", uid)
@@ -154,9 +153,9 @@ window.addEventListener("DOMContentLoaded", () => {
           (err) => {
             if (err) {
               console.error(err);
-              fs.writeFile(inoPath, oriData, (err) => {
+              fs.writeFile(inoPath, espSrcCode, (err) => {
                 if (err) console.error(err);
-                console.log("[INFO] Recovered .ino file");
+                else console.log("[INFO] Recovered .ino file");
               });
               //TODO: log error
               return;
@@ -187,10 +186,11 @@ window.addEventListener("DOMContentLoaded", () => {
             `[INFO] countOut: ${countOutCmd}, countErr: ${countErrCmd}`
           );
 
-          fs.writeFile(inoPath, oriData, (err) => {
+          fs.writeFile(inoPath, espSrcCode, (err) => {
             if (err) console.error(err);
-            console.log("[INFO] Recovered .ino file");
+            else console.log("[INFO] Recovered .ino file");
           });
+
           // when everything is done successfully
           $.ajax({
             url: "/home/newDevices",
@@ -222,9 +222,9 @@ window.addEventListener("DOMContentLoaded", () => {
           (err) => {
             if (err) {
               console.error(err);
-              fs.writeFile(inoPath, oriData, (err) => {
+              fs.writeFile(inoPath, espSrcCode, (err) => {
                 if (err) console.error(err);
-                console.log("[INFO] Recovered .ino file");
+                else console.log("[INFO] Recovered .ino file");
               });
               //TODO: log error
               return;
@@ -255,9 +255,9 @@ window.addEventListener("DOMContentLoaded", () => {
             `[INFO] countOut: ${countOutTerminal}, countErr: ${countErrTerminal}`
           );
 
-          fs.writeFile(inoPath, oriData, (err) => {
+          fs.writeFile(inoPath, espSrcCode, (err) => {
             if (err) console.error(err);
-            console.log("[INFO] Recovered .ino file");
+            else console.log("[INFO] Recovered .ino file");
           });
 
           // when everything is done successfully
