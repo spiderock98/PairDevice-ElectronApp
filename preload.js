@@ -4,7 +4,7 @@
 const { PythonShell } = require("python-shell");
 const path = require("path");
 const fs = require("fs");
-const { spawn, execFile, exec } = require("child_process");
+const { spawn } = require("child_process");
 const config = require(path.join(__dirname, "config", "config.json"));
 
 const replaceText = (selector, text) => {
@@ -106,7 +106,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if (err) console.error(err);
   });
 
-  $("#inputGroupSelectSSID").change(() => {
+  $("#inputGroupSelectSSID").on("change", () => {
     let ssid = document.getElementById("inputGroupSelectSSID").value;
     indexSSID = $.inArray(ssid, arrSaved);
     if (indexSSID != -1) {
@@ -148,7 +148,7 @@ window.addEventListener("DOMContentLoaded", () => {
         //!==========================//WINDOWS//==========================!//
         console.log("[INFO] Windows Deteted");
         let cmdBuild = spawn(
-          `cd ${buildFolderPath} & arduino-cli.exe core update-index --additional-urls ${config.addURLs} & arduino-cli.exe compile --additional-urls ${config.addURLs} --libraries ${customLibPath} --upload --verbose --port ${port} --fqbn=${config[board]},baud=${baud} ${buildFolderPath}`,
+          `cd ${buildFolderPath} & arduino-cli.exe core update-index --additional-urls ${config.addURLsESP8266} & arduino-cli.exe compile --additional-urls ${config.addURLsESP8266} --libraries ${customLibPath} --upload --verbose --port ${port} --fqbn=${config[board]},baud=${baud} ${buildFolderPath}`,
           { shell: true },
           (err) => {
             if (err) {
@@ -207,8 +207,7 @@ window.addEventListener("DOMContentLoaded", () => {
               port: $("#formDevice").find("select[name='port']").val(),
             },
             success: () => {
-              console.log("Redirect to home");
-              location.href = "/";
+              location.href = "/devices";
             },
           });
         });
@@ -217,7 +216,7 @@ window.addEventListener("DOMContentLoaded", () => {
       case "darwin":
         //!==========================//MACOS//==========================!//
         let terminalBuild = spawn(
-          `cd ${buildFolderPath} && ./arduino-cli core update-index --additional-urls ${config.addURLs} && ./arduino-cli compile --additional-urls ${config.addURLs} --libraries ${customLibPath} --upload --verbose --port ${port} --fqbn=${config[board]},baud=${baud} ${buildFolderPath}`,
+          `cd ${buildFolderPath} && ./arduino-cli core update-index --additional-urls ${config.addURLsESP8266} && ./arduino-cli compile --additional-urls ${config.addURLsESP8266} --libraries ${customLibPath} --upload --verbose --port ${port} --fqbn=${config[board]},baud=${baud} ${buildFolderPath}`,
           { shell: true, maxBuffer: 1024 * 1024 * 500 },
           (err) => {
             if (err) {
@@ -276,8 +275,7 @@ window.addEventListener("DOMContentLoaded", () => {
               port: $("#formDevice").find("select[name='port']").val(),
             },
             success: () => {
-              console.log("Redirect to home");
-              location.href = "/";
+              location.href = "/devices";
             },
           });
         });
