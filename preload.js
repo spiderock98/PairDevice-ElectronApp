@@ -82,7 +82,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // when home site loaded => not in auth site
   if (document.getElementById("inputGroupSelectSSID")) {
     detectSSIDs();
-    $("#btnReSSID").click(() => {
+    $("#btnReSSID").on('click', () => {
       detectSSIDs();
       detectPORT();
     });
@@ -148,7 +148,7 @@ window.addEventListener("DOMContentLoaded", () => {
         //!==========================//WINDOWS//==========================!//
         console.log("[INFO] Windows Deteted");
         let cmdBuild = spawn(
-          `cd ${buildFolderPath} & arduino-cli.exe core update-index --additional-urls ${config.addURLsESP8266} & arduino-cli.exe compile --additional-urls ${config.addURLsESP8266} --libraries ${customLibPath} --upload --verbose --port ${port} --fqbn=${config[board]},baud=${baud} ${buildFolderPath}`,
+          `cd ${buildFolderPath} & arduino-cli.exe core install arduino:avr & arduino-cli.exe core update-index --additional-urls ${config.addURLsESP8266} & arduino-cli.exe core install esp8266:esp8266 --additional-urls ${config.addURLsESP8266} & arduino-cli.exe compile --additional-urls ${config.addURLsESP8266} --libraries ${customLibPath} --upload --verbose --port ${port} --fqbn=${config[board]},baud=${baud} ${buildFolderPath}`,
           { shell: true },
           (err) => {
             if (err) {
@@ -215,8 +215,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
       case "darwin":
         //!==========================//MACOS//==========================!//
+        console.log("[INFO] MacOS Deteted");
         let terminalBuild = spawn(
-          `cd ${buildFolderPath} && ./arduino-cli core update-index --additional-urls ${config.addURLsESP8266} && ./arduino-cli compile --additional-urls ${config.addURLsESP8266} --libraries ${customLibPath} --upload --verbose --port ${port} --fqbn=${config[board]},baud=${baud} ${buildFolderPath}`,
+          `cd ${buildFolderPath} && ./arduino-cli core install arduino:avr && ./arduino-cli core update-index --additional-urls ${config.addURLsESP8266} && ./arduino-cli core install esp8266:esp8266 --additional-urls ${config.addURLsESP8266} && ./arduino-cli compile --additional-urls ${config.addURLsESP8266} --libraries ${customLibPath} --upload --verbose --port ${port} --fqbn=${config[board]},baud=${baud} ${buildFolderPath}`,
           { shell: true, maxBuffer: 1024 * 1024 * 500 },
           (err) => {
             if (err) {
