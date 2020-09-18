@@ -12,9 +12,9 @@ const replaceText = (selector, text) => {
   if (element) element.innerText = text;
 };
 
-// verify user uid
-function getCurrentUID() {
-  return new Promise((resolve) => {
+//!=======================/verify user uid/=======================!//
+const getCurrentUID = () => {
+  return new Promise(resolve => {
     $.ajax({
       url: "/auth/getCurrentUID",
       method: "POST",
@@ -25,22 +25,21 @@ function getCurrentUID() {
   });
 }
 
-// function getCurrentPhysicalID() {
-//   return new Promise(resolve => {
-//     $.ajax({
-//       url: "/auth/getCurrentUID",
-//       method: "POST",
-//       success: (uid) => {
-//         resolve(uid)
-//       }
-//     })
-//   })
-// }
+const getCurrentPhysicalID = () => {
+  return new Promise(resolve => {
+    $.ajax({
+      url: "/auth/getCurrentUID",
+      method: "POST",
+      success: (uid) => {
+        resolve(uid)
+      }
+    })
+  })
+}
 
-function detectSSIDs() {
+const detectSSIDs = () => {
   let opts = {
     scriptPath: path.join(__dirname, "/engine/"),
-    // pythonPath: 'C:/Program Files/Python37'
   };
   let wifi = new PythonShell("detect-network.py", opts);
 
@@ -54,10 +53,9 @@ function detectSSIDs() {
   });
 }
 
-function detectPORT() {
+const detectPORT = () => {
   let opts = {
     scriptPath: path.join(__dirname, "/engine/"),
-    // pythonPath: 'C:/Program Files/Python37'
   };
   let port = new PythonShell("detect-port.py", opts);
 
@@ -71,30 +69,10 @@ function detectPORT() {
   });
 }
 
-window.addEventListener("DOMContentLoaded", () => {
-  // put this line here because suddenly error when load in header :(
-  const Swal = require("sweetalert2");
-
-  // for (const type of ['chrome', 'node', 'electron']) {
-  //   replaceText(`${type}-version`, process.versions[type])
-  // }
-
-  // when home site loaded => not in auth site
-  if (document.getElementById("inputGroupSelectSSID")) {
-    detectSSIDs();
-    $("#btnReSSID").on('click', () => {
-      detectSSIDs();
-      detectPORT();
-    });
-  }
-  if (document.getElementById("inputGroupSelectPORT")) {
-    detectPORT();
-  }
-
-  //!==================//find saved password on ssid click//==================!//
+const findSavedPsk = () => {
+  //!==================/find SAVED PASSWORD on ssid combo changed/==================!//
   let opts = {
     scriptPath: path.join(__dirname, "/engine/"),
-    // pythonPath: 'C:/Program Files/Python37'
   };
   let wifi = new PythonShell("saved-network.py", opts);
 
@@ -108,7 +86,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   $("#inputGroupSelectSSID").on("change", () => {
     let ssid = document.getElementById("inputGroupSelectSSID").value;
-    indexSSID = $.inArray(ssid, arrSaved);
+    let indexSSID = $.inArray(ssid, arrSaved);
     if (indexSSID != -1) {
       // when found psk of corresponding ssid
       document.getElementById("psk").value = arrSaved[indexSSID + 1];
@@ -116,6 +94,33 @@ window.addEventListener("DOMContentLoaded", () => {
       document.getElementById("psk").value = "";
     }
   });
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  // put this line here because suddenly error when load in header :(
+  const Swal = require("sweetalert2");
+
+  //!===================/here is when home site loaded => not in auth site/===================!//
+
+
+  //!===================/refresh port and ssid when select or refresh/===================!//
+  if (document.getElementById("inputGroupSelectSSID")) {
+    detectSSIDs();
+    $("#btnRefreshSSID").on('click', () => {
+      detectSSIDs();
+      detectPORT();
+    });
+  }
+  if (document.getElementById("inputGroupSelectPORT")) {
+    detectPORT();
+  }
+
+  findSavedPsk();
+
+  // $("#foo").on('click', () => {
+  //   console.log($("#hidLatCoor").text());
+  //   console.log($("#hidLngCoor").text());
+  // })
 
   $("#formDevice").on("submit", async (event) => {
     event.preventDefault();
@@ -127,6 +132,8 @@ window.addEventListener("DOMContentLoaded", () => {
     let baud = $("#formDevice").find("select[name='baud']").val();
     let port = $("#formDevice").find("select[name='port']").val();
     let board = $("#formDevice").find("select[name='board']").val();
+    let latCoor = $("#hidLatCoor").text()
+    let lngCoor = $("#hidLngCoor").text()
     let uid = await getCurrentUID();
     let buildFolderPath = path.join(__dirname, "ArduinoBuilder");
     let inoPath = path.join(buildFolderPath, "ArduinoBuilder.ino");
@@ -191,14 +198,15 @@ window.addEventListener("DOMContentLoaded", () => {
             else console.log("[INFO] Recovered .ino file");
           });
 
-          // when everything is done successfully
+          //!===================/when everything is done successfully/===================!//
           $.ajax({
-            url: "/home/newDevices",
+            url: "/devices/newDevices",
             method: "POST",
             data: {
               name: $("#formDevice").find("input[name='name']").val(),
-              loc: $("#formDevice").find("input[name='loc']").val(),
-              //TODO: ssid is <input> or <select>
+              locat: $("#formDevice").find("input[name='locat']").val(),
+              latCoor: latCoor,
+              lngCoor: lngCoor,
               ssid:
                 $("#formDevice").find("input[name='ssid']").val() ||
                 $("#formDevice").find("select[name='ssid']").val(),
@@ -260,14 +268,13 @@ window.addEventListener("DOMContentLoaded", () => {
             else console.log("[INFO] Recovered .ino file");
           });
 
-          // when everything is done successfully
+          //!===================/when everything is done successfully/===================!//
           $.ajax({
-            url: "/home/newDevices",
+            url: "/devices/newDevices",
             method: "POST",
             data: {
               name: $("#formDevice").find("input[name='name']").val(),
-              loc: $("#formDevice").find("input[name='loc']").val(),
-              //TODO: ssid is <input> or <select>
+              locat: $("#formDevice").find("input[name='locat']").val(),
               ssid:
                 $("#formDevice").find("input[name='ssid']").val() ||
                 $("#formDevice").find("select[name='ssid']").val(),
@@ -283,7 +290,7 @@ window.addEventListener("DOMContentLoaded", () => {
         break;
 
       default:
-        console.error("Your Operating System is not supported");
+        console.error("[INFO] Your Operating System is not supported");
         break;
     }
   });
