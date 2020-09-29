@@ -40,6 +40,8 @@ const getCurrentPhysicalID = () => {
 const detectSSIDs = () => {
   let opts = {
     scriptPath: path.join(__dirname, "/engine/"),
+    // pythonPath: 'C:/Users/nguye/AppData/Local/Programs/Python/Python38-32'
+    // pythonPath: 'C:/Python38'
   };
   let wifi = new PythonShell("detect-network.py", opts);
 
@@ -56,6 +58,8 @@ const detectSSIDs = () => {
 const detectPORT = () => {
   let opts = {
     scriptPath: path.join(__dirname, "/engine/"),
+    // pythonPath: 'C:/Users/nguye/AppData/Local/Programs/Python/Python38-32'
+    // pythonPath: 'C:/Python38'
   };
   let port = new PythonShell("detect-port.py", opts);
 
@@ -73,6 +77,8 @@ const findSavedPsk = () => {
   //!==================/find SAVED PASSWORD on ssid combo changed/==================!//
   let opts = {
     scriptPath: path.join(__dirname, "/engine/"),
+    // pythonPath: 'C:/Users/nguye/AppData/Local/Programs/Python/Python38-32'
+    // pythonPath: 'C:/Python38'
   };
   let wifi = new PythonShell("saved-network.py", opts);
 
@@ -100,10 +106,10 @@ window.addEventListener("DOMContentLoaded", () => {
   // put this line here because suddenly error when load in header :(
   const Swal = require("sweetalert2");
 
-  //!===================/here is when home site loaded => not in auth site/===================!//
+  //!=============/here is when HOME site loaded => not in AUTH site/=============!//
 
 
-  //!===================/refresh port and ssid when select or refresh/===================!//
+  //!==============/refresh port and ssid when select or refresh/==============!//
   if (document.getElementById("inputGroupSelectSSID")) {
     detectSSIDs();
     $("#btnRefreshSSID").on('click', () => {
@@ -114,24 +120,19 @@ window.addEventListener("DOMContentLoaded", () => {
   if (document.getElementById("inputGroupSelectPORT")) {
     detectPORT();
   }
-
   findSavedPsk();
 
-  // $("#foo").on('click', () => {
-  //   console.log($("#hidLatCoor").text());
-  //   console.log($("#hidLngCoor").text());
-  // })
-
-  $("#formDevice").on("submit", async (event) => {
+  //!============/ collect modal info of new GARDEN and POST new GARDEN /============!//
+  $("#formGarden").on("submit", async (event) => {
     event.preventDefault();
     let ssid =
-      $("#formDevice").find("input[name='ssid']").val() ||
-      $("#formDevice").find("select[name='ssid']").val();
-    let psk = $("#formDevice").find("input[name='psk']").val();
-    let name = $("#formDevice").find("input[name='name']").val();
-    let baud = $("#formDevice").find("select[name='baud']").val();
-    let port = $("#formDevice").find("select[name='port']").val();
-    let board = $("#formDevice").find("select[name='board']").val();
+      $("#formGarden").find("input[name='ssid']").val() ||
+      $("#formGarden").find("select[name='ssid']").val();
+    let psk = $("#formGarden").find("input[name='psk']").val();
+    let name = $("#formGarden").find("input[name='name']").val();
+    let baud = $("#formGarden").find("select[name='baud']").val();
+    let port = $("#formGarden").find("select[name='port']").val();
+    let board = $("#formGarden").find("select[name='board']").val();
     let latCoor = $("#hidLatCoor").text()
     let lngCoor = $("#hidLngCoor").text()
     let uid = await getCurrentUID();
@@ -150,12 +151,18 @@ window.addEventListener("DOMContentLoaded", () => {
 
     fs.writeFileSync(inoPath, replaceData);
     console.log("[INFO] Building ...");
+    // init some stuff
+    const chosenMCU = (board == "ESP32 Dev Module") ? config.addURLsESP32 : config.addURLsESP8266
+    const chosenCore = (board == "ESP32 Dev Module") ? "esp32:esp32" : "esp8266:esp8266"
+    const chosenBaudrate = (board == "ESP32 Dev Module") ? `UploadSpeed=${baud}` : `baud=${baud}`
+
     switch (process.platform) {
       case "win32":
-        //!==========================//WINDOWS//==========================!//
+        //!======================//WINDOWS//======================!//
         console.log("[INFO] Windows Deteted");
+
         let cmdBuild = spawn(
-          `cd ${buildFolderPath} & arduino-cli.exe core install arduino:avr & arduino-cli.exe core update-index --additional-urls ${config.addURLsESP8266} & arduino-cli.exe core install esp8266:esp8266 --additional-urls ${config.addURLsESP8266} & arduino-cli.exe compile --additional-urls ${config.addURLsESP8266} --libraries ${customLibPath} --upload --verbose --port ${port} --fqbn=${config[board]},baud=${baud} ${buildFolderPath}`,
+          `cd ${buildFolderPath} & arduino-cli.exe core install arduino:avr & arduino-cli.exe core update-index --additional-urls ${chosenMCU} & arduino-cli.exe core install ${chosenCore} --additional-urls ${chosenMCU} & arduino-cli.exe compile --additional-urls ${chosenMCU} --libraries ${customLibPath} --upload --verbose --port ${port} --fqbn=${config[board]},${chosenBaudrate} ${buildFolderPath}`,
           { shell: true },
           (err) => {
             if (err) {
@@ -198,21 +205,21 @@ window.addEventListener("DOMContentLoaded", () => {
             else console.log("[INFO] Recovered .ino file");
           });
 
-          //!===================/when everything is done successfully/===================!//
+          //?===================/when everything is done successfully/===================?//
           $.ajax({
-            url: "/devices/newDevices",
+            url: "/devices/updateGarden",
             method: "POST",
             data: {
-              name: $("#formDevice").find("input[name='name']").val(),
-              locat: $("#formDevice").find("input[name='locat']").val(),
+              gardenName: $("#formGarden").find("input[name='name']").val(),
               latCoor: latCoor,
               lngCoor: lngCoor,
-              ssid:
-                $("#formDevice").find("input[name='ssid']").val() ||
-                $("#formDevice").find("select[name='ssid']").val(),
-              psk: $("#formDevice").find("input[name='psk']").val(),
-              baud: $("#formDevice").find("select[name='baud']").val(),
-              port: $("#formDevice").find("select[name='port']").val(),
+              place: $("#formGarden").find("input[name='locat']").val(),
+              // ssid:
+              //   $("#formGarden").find("input[name='ssid']").val() ||
+              //   $("#formGarden").find("select[name='ssid']").val(),
+              // psk: $("#formGarden").find("input[name='psk']").val(),
+              // baud: $("#formGarden").find("select[name='baud']").val(),
+              // port: $("#formGarden").find("select[name='port']").val(),
             },
             success: () => {
               location.href = "/devices";
@@ -222,10 +229,10 @@ window.addEventListener("DOMContentLoaded", () => {
         break;
 
       case "darwin":
-        //!==========================//MACOS//==========================!//
+        //!======================/ MACOS /======================!//
         console.log("[INFO] MacOS Deteted");
         let terminalBuild = spawn(
-          `cd ${buildFolderPath} && ./arduino-cli core install arduino:avr && ./arduino-cli core update-index --additional-urls ${config.addURLsESP8266} && ./arduino-cli core install esp8266:esp8266 --additional-urls ${config.addURLsESP8266} && ./arduino-cli compile --additional-urls ${config.addURLsESP8266} --libraries ${customLibPath} --upload --verbose --port ${port} --fqbn=${config[board]},baud=${baud} ${buildFolderPath}`,
+          `cd ${buildFolderPath} && ./arduino-cli core install arduino:avr && ./arduino-cli core update-index --additional-urls ${chosenCore} && ./arduino-cli core install esp8266:esp8266 --additional-urls ${chosenCore} && ./arduino-cli compile --additional-urls ${chosenCore} --libraries ${customLibPath} --upload --verbose --port ${port} --fqbn=${config[board]},baud=${baud} ${buildFolderPath}`,
           { shell: true, maxBuffer: 1024 * 1024 * 500 },
           (err) => {
             if (err) {
@@ -263,24 +270,27 @@ window.addEventListener("DOMContentLoaded", () => {
             `[INFO] countOut: ${countOutTerminal}, countErr: ${countErrTerminal}`
           );
 
+          //?===================/ when everything is done successfully /===================?//
+
           fs.writeFile(inoPath, espSrcCode, (err) => {
             if (err) console.error(err);
             else console.log("[INFO] Recovered .ino file");
           });
 
-          //!===================/when everything is done successfully/===================!//
           $.ajax({
-            url: "/devices/newDevices",
+            url: "/devices/updateGarden",
             method: "POST",
             data: {
-              name: $("#formDevice").find("input[name='name']").val(),
-              locat: $("#formDevice").find("input[name='locat']").val(),
-              ssid:
-                $("#formDevice").find("input[name='ssid']").val() ||
-                $("#formDevice").find("select[name='ssid']").val(),
-              psk: $("#formDevice").find("input[name='psk']").val(),
-              baud: $("#formDevice").find("select[name='baud']").val(),
-              port: $("#formDevice").find("select[name='port']").val(),
+              gardenName: $("#formGarden").find("input[name='name']").val(),
+              latCoor: latCoor,
+              lngCoor: lngCoor,
+              place: $("#formGarden").find("input[name='locat']").val(),
+              // ssid:
+              //   $("#formGarden").find("input[name='ssid']").val() ||
+              //   $("#formGarden").find("select[name='ssid']").val(),
+              // psk: $("#formGarden").find("input[name='psk']").val(),
+              // baud: $("#formGarden").find("select[name='baud']").val(),
+              // port: $("#formGarden").find("select[name='port']").val(),
             },
             success: () => {
               location.href = "/devices";
@@ -294,4 +304,12 @@ window.addEventListener("DOMContentLoaded", () => {
         break;
     }
   });
+
+  //!============/ collect modal info of new DEVICE and POST new DEVICE /============!//
+  $("#formDevice").on('submit', (event) => {
+    event.preventDefault();
+
+    const deviceName = $("#formDevice").find("input[name='deviceName']").val();
+
+  })
 });

@@ -10,7 +10,7 @@
 // bApb0Ypwg5YszGanWOBKre39zlg1
 #define UID "dinhdanh"
 #define NODENAME "physicalID"
-#define HOST "192.168.1.3" //HOME local ip
+#define HOST "192.168.1.2" //HOME local ip
 #define PORT 8880
 
 const char *ssid = STASSID;
