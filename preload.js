@@ -82,7 +82,7 @@ const findSavedPsk = () => {
   };
   let wifi = new PythonShell("saved-network.py", opts);
 
-  var arrSaved = new Array();
+  var arrSaved = [];
   wifi.on("message", (message) => {
     arrSaved.push(message);
   });
@@ -152,9 +152,44 @@ window.addEventListener("DOMContentLoaded", () => {
     fs.writeFileSync(inoPath, replaceData);
     console.log("[INFO] Building ...");
     // init some stuff
-    const chosenMCU = (board == "ESP32 Dev Module") ? config.addURLsESP32 : config.addURLsESP8266
-    const chosenCore = (board == "ESP32 Dev Module") ? "esp32:esp32" : "esp8266:esp8266"
-    const chosenBaudrate = (board == "ESP32 Dev Module") ? `UploadSpeed=${baud}` : `baud=${baud}`
+    // let chosenMCU = (board == "ESP32 Dev Module") ? config.addURLsESP32 : config.addURLsESP8266
+    // let chosenCore = (board == "ESP32 Dev Module") ? "esp32:esp32" : "esp8266:esp8266"
+    // let chosenBaudrate = (board == "ESP32 Dev Module") ? `UploadSpeed=${baud}` : `baud=${baud}`
+
+    let chosenMCU, chosenCore, chosenBaudrate, enumId;
+    switch (board) {
+      case "NodeMCU ESP8266 v1.0":
+        chosenMCU = config.addURLsESP8266;
+        chosenCore = "esp8266:esp8266";
+        chosenBaudrate = `,baud=${baud}`;
+        enumId = 1;
+        break;
+
+      case "AI Thinker ESP32-CAM":
+        chosenMCU = config.addURLsESP32;
+        chosenCore = "esp32:esp32";
+        chosenBaudrate = "";
+        enumId = 2;
+        break;
+
+      case "WeMos ESP8266 D1 R1":
+        chosenMCU = config.addURLsESP8266;
+        chosenCore = "esp8266:esp8266";
+        chosenBaudrate = `,baud=${baud}`;
+        enumId = 3;
+        break;
+
+      case "ESP32 Dev Module":
+        chosenMCU = config.addURLsESP32;
+        chosenCore = "esp32:esp32";
+        chosenBaudrate = `,UploadSpeed=${baud}`;
+        enumId = 4;
+        break;
+
+      default:
+        break;
+    }
+
 
     switch (process.platform) {
       case "win32":
@@ -162,7 +197,8 @@ window.addEventListener("DOMContentLoaded", () => {
         console.log("[INFO] Windows Deteted");
 
         let cmdBuild = spawn(
-          `cd ${buildFolderPath} & arduino-cli.exe core install arduino:avr & arduino-cli.exe core update-index --additional-urls ${chosenMCU} & arduino-cli.exe core install ${chosenCore} --additional-urls ${chosenMCU} & arduino-cli.exe compile --additional-urls ${chosenMCU} --libraries ${customLibPath} --upload --verbose --port ${port} --fqbn=${config[board]},${chosenBaudrate} ${buildFolderPath}`,
+          // `cd ${buildFolderPath} & arduino-cli.exe core install arduino:avr & arduino-cli.exe core update-index --additional-urls ${chosenMCU} & arduino-cli.exe core install ${chosenCore} --additional-urls ${chosenMCU} & arduino-cli.exe compile --additional-urls ${chosenMCU} --libraries ${customLibPath} --upload --verbose --port ${port} --fqbn=${config[board]}${enumId == 2 ? "" : ","}${chosenBaudrate} ${buildFolderPath}`,
+          `cd ${buildFolderPath} & arduino-cli.exe core install arduino:avr & arduino-cli.exe core update-index --additional-urls ${chosenMCU} & arduino-cli.exe core install ${chosenCore} --additional-urls ${chosenMCU} & arduino-cli.exe compile --additional-urls ${chosenMCU} --libraries ${customLibPath} --verbose --fqbn=${config[board]}${chosenBaudrate} ${buildFolderPath}`,
           { shell: true },
           (err) => {
             if (err) {
@@ -194,7 +230,7 @@ window.addEventListener("DOMContentLoaded", () => {
         });
         cmdBuild.on("close", (code) => {
           console.log(
-            `[SUCCESS] child process COMPILER exited with code ${code}`
+            `[SUCCESS] child process COMPILE exited with code ${code}`
           );
           console.log(
             `[INFO] countOut: ${countOutCmd}, countErr: ${countErrCmd}`
@@ -205,26 +241,54 @@ window.addEventListener("DOMContentLoaded", () => {
             else console.log("[INFO] Recovered .ino file");
           });
 
-          //?===================/when everything is done successfully/===================?//
-          $.ajax({
-            url: "/devices/updateGarden",
-            method: "POST",
-            data: {
-              gardenName: $("#formGarden").find("input[name='name']").val(),
-              latCoor: latCoor,
-              lngCoor: lngCoor,
-              place: $("#formGarden").find("input[name='locat']").val(),
-              // ssid:
-              //   $("#formGarden").find("input[name='ssid']").val() ||
-              //   $("#formGarden").find("select[name='ssid']").val(),
-              // psk: $("#formGarden").find("input[name='psk']").val(),
-              // baud: $("#formGarden").find("select[name='baud']").val(),
-              // port: $("#formGarden").find("select[name='port']").val(),
-            },
-            success: () => {
-              location.href = "/devices";
-            },
+          console.log("[INFO] Begin Uploading ...");
+          let cmdUpload = spawn(
+            `cd ${buildFolderPath} & arduino-cli.exe upload --verbose --port ${port} --fqbn=${config[board]}${chosenBaudrate} ${buildFolderPath}`,
+            { shell: true },
+            (err) => {
+              if (err) {
+                console.error(err);
+                return;
+              }
+            }
+          );
+          // Async Listener
+          cmdUpload.stdout.on("data", (log) => {
+            countOutCmd = countOutCmd + 1;
+            console.log(`stdout[${countOutCmd}]: ${log}`);
+            $("#progressCompiler").attr(
+              "style",
+              `width: ${(countOutCmd / 125) * 100}%`
+            );
           });
+          cmdUpload.stderr.on("data", (err) => {
+            console.error(`stderr: ${err}`);
+            countErrCmd = countErrCmd + 1;
+          });
+          cmdUpload.on("close", (code) => {
+            console.log(`[SUCCESS] child process UPLOADING exited with code ${code}`);
+
+            //?===================/when everything is done successfully/===================?//
+            $.ajax({
+              url: "/devices/updateGarden",
+              method: "POST",
+              data: {
+                gardenName: $("#formGarden").find("input[name='name']").val(),
+                latCoor: latCoor,
+                lngCoor: lngCoor,
+                place: $("#formGarden").find("input[name='locat']").val(),
+                // ssid:
+                //   $("#formGarden").find("input[name='ssid']").val() ||
+                //   $("#formGarden").find("select[name='ssid']").val(),
+                // psk: $("#formGarden").find("input[name='psk']").val(),
+                // baud: $("#formGarden").find("select[name='baud']").val(),
+                // port: $("#formGarden").find("select[name='port']").val(),
+              },
+              success: () => {
+                location.href = "/devices";
+              },
+            });
+          })
         });
         break;
 
@@ -232,7 +296,7 @@ window.addEventListener("DOMContentLoaded", () => {
         //!======================/ MACOS /======================!//
         console.log("[INFO] MacOS Deteted");
         let terminalBuild = spawn(
-          `cd ${buildFolderPath} && ./arduino-cli core install arduino:avr && ./arduino-cli core update-index --additional-urls ${chosenCore} && ./arduino-cli core install esp8266:esp8266 --additional-urls ${chosenCore} && ./arduino-cli compile --additional-urls ${chosenCore} --libraries ${customLibPath} --upload --verbose --port ${port} --fqbn=${config[board]},baud=${baud} ${buildFolderPath}`,
+          `cd ${buildFolderPath} && ./arduino-cli core install arduino:avr && ./arduino-cli core update-index --additional-urls ${chosenMCU} && ./arduino-cli core install ${chosenCore} --additional-urls ${chosenMCU} && ./arduino-cli compile --additional-urls ${chosenMCU} --libraries ${customLibPath} --upload --verbose --port ${port} --fqbn=${config[board]}${chosenBaudrate} ${buildFolderPath}`,
           { shell: true, maxBuffer: 1024 * 1024 * 500 },
           (err) => {
             if (err) {
