@@ -6,6 +6,8 @@ const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
 const config = require(path.join(__dirname, "config", "config.json"));
+const player = require('node-wav-player');
+
 
 const replaceText = (selector, text) => {
   const element = document.getElementById(selector);
@@ -40,7 +42,7 @@ const getCurrentPhysicalID = () => {
 const detectSSIDs = () => {
   let opts = {
     scriptPath: path.join(__dirname, "/engine/"),
-    // pythonPath: 'C:/Users/nguye/AppData/Local/Programs/Python/Python38-32'
+    // pythonPath: 'C:/Users/nguye/AppData/Local/Programs/Python/Python39'
     // pythonPath: 'C:/Python38'
   };
   let wifi = new PythonShell("detect-network.py", opts);
@@ -58,7 +60,7 @@ const detectSSIDs = () => {
 const detectPORT = () => {
   let opts = {
     scriptPath: path.join(__dirname, "/engine/"),
-    // pythonPath: 'C:/Users/nguye/AppData/Local/Programs/Python/Python38-32'
+    // pythonPath: 'C:/Users/nguye/AppData/Local/Programs/Python/Python39'
     // pythonPath: 'C:/Python38'
   };
   let port = new PythonShell("detect-port.py", opts);
@@ -77,7 +79,7 @@ const findSavedPsk = () => {
   //!==================/find SAVED PASSWORD on ssid combo changed/==================!//
   let opts = {
     scriptPath: path.join(__dirname, "/engine/"),
-    // pythonPath: 'C:/Users/nguye/AppData/Local/Programs/Python/Python38-32'
+    // pythonPath: 'C:/Users/nguye/AppData/Local/Programs/Python/Python39'
     // pythonPath: 'C:/Python38'
   };
   let wifi = new PythonShell("saved-network.py", opts);
@@ -104,12 +106,11 @@ const findSavedPsk = () => {
 
 window.addEventListener("DOMContentLoaded", () => {
   // put this line here because suddenly error when load in header :(
-  const Swal = require("sweetalert2");
+  // const Swal = require("sweetalert2");
 
-  //!=============/here is when HOME site loaded => not in AUTH site/=============!//
+  //?=============/here is when HOME site loaded => not in AUTH site/=============?//
 
-
-  //!==============/refresh port and ssid when select or refresh/==============!//
+  //!==============/ refresh port and ssid when select or refresh /==============!//
   if (document.getElementById("inputGroupSelectSSID")) {
     detectSSIDs();
     $("#btnRefreshSSID").on('click', () => {
@@ -141,21 +142,14 @@ window.addEventListener("DOMContentLoaded", () => {
     let customLibPath = path.join(buildFolderPath, "user_libraries");
 
     console.log("[INFO] Editing ino file ...");
-
     let espSrcCode = fs.readFileSync(inoPath, { encoding: "utf-8" });
     let replaceData = espSrcCode
       .replace("taikhoan", ssid)
       .replace("matkhau", psk)
       .replace("dinhdanh", uid)
       .replace("physicalID", name);
-
     fs.writeFileSync(inoPath, replaceData);
     console.log("[INFO] Building ...");
-    // init some stuff
-    // let chosenMCU = (board == "ESP32 Dev Module") ? config.addURLsESP32 : config.addURLsESP8266
-    // let chosenCore = (board == "ESP32 Dev Module") ? "esp32:esp32" : "esp8266:esp8266"
-    // let chosenBaudrate = (board == "ESP32 Dev Module") ? `UploadSpeed=${baud}` : `baud=${baud}`
-
     let chosenMCU, chosenCore, chosenBaudrate, enumId;
     switch (board) {
       case "NodeMCU ESP8266 v1.0":
@@ -190,15 +184,13 @@ window.addEventListener("DOMContentLoaded", () => {
         break;
     }
 
-
     switch (process.platform) {
       case "win32":
-        //!======================//WINDOWS//======================!//
+        //!======================/ WINDOWS /======================!//
         console.log("[INFO] Windows Deteted");
 
         let cmdBuild = spawn(
-          // `cd ${buildFolderPath} & arduino-cli.exe core install arduino:avr & arduino-cli.exe core update-index --additional-urls ${chosenMCU} & arduino-cli.exe core install ${chosenCore} --additional-urls ${chosenMCU} & arduino-cli.exe compile --additional-urls ${chosenMCU} --libraries ${customLibPath} --upload --verbose --port ${port} --fqbn=${config[board]}${enumId == 2 ? "" : ","}${chosenBaudrate} ${buildFolderPath}`,
-          `cd ${buildFolderPath} & arduino-cli.exe core install arduino:avr & arduino-cli.exe core update-index --additional-urls ${chosenMCU} & arduino-cli.exe core install ${chosenCore} --additional-urls ${chosenMCU} & arduino-cli.exe compile --additional-urls ${chosenMCU} --libraries ${customLibPath} --verbose --fqbn=${config[board]}${chosenBaudrate} ${buildFolderPath}`,
+          `cd ${buildFolderPath} & arduino-cli.exe core install arduino:avr & arduino-cli.exe core update-index --additional-urls ${chosenMCU} & arduino-cli.exe core install ${chosenCore} --additional-urls ${chosenMCU} & arduino-cli.exe compile --additional-urls ${chosenMCU} --libraries ${customLibPath} --fqbn=${config[board]}${chosenBaudrate} ${buildFolderPath}`,
           { shell: true },
           (err) => {
             if (err) {
@@ -207,91 +199,87 @@ window.addEventListener("DOMContentLoaded", () => {
                 if (err) console.error(err);
                 else console.log("[INFO] Recovered .ino file");
               });
-              //TODO: log error
               return;
             }
           }
         );
 
-        let countOutCmd = 0;
-        let countErrCmd = 0;
         // Async Listener
         cmdBuild.stdout.on("data", (log) => {
-          countOutCmd = countOutCmd + 1;
-          console.log(`stdout[${countOutCmd}]: ${log}`);
-          $("#progressCompiler").attr(
-            "style",
-            `width: ${(countOutCmd / 125) * 100}%`
-          );
+          console.log(log);
         });
-        cmdBuild.stderr.on("data", (err) => {
-          console.error(`stderr: ${err}`);
-          countErrCmd = countErrCmd + 1;
-        });
+        cmdBuild.stderr.on("data", (err) => { console.error(err); });
         cmdBuild.on("close", (code) => {
-          console.log(
-            `[SUCCESS] child process COMPILE exited with code ${code}`
-          );
-          console.log(
-            `[INFO] countOut: ${countOutCmd}, countErr: ${countErrCmd}`
-          );
-
-          fs.writeFile(inoPath, espSrcCode, (err) => {
-            if (err) console.error(err);
-            else console.log("[INFO] Recovered .ino file");
-          });
-
-          console.log("[INFO] Begin Uploading ...");
-          let cmdUpload = spawn(
-            `cd ${buildFolderPath} & arduino-cli.exe upload --verbose --port ${port} --fqbn=${config[board]}${chosenBaudrate} ${buildFolderPath}`,
-            { shell: true },
-            (err) => {
-              if (err) {
-                console.error(err);
-                return;
-              }
-            }
-          );
-          // Async Listener
-          cmdUpload.stdout.on("data", (log) => {
-            countOutCmd = countOutCmd + 1;
-            console.log(`stdout[${countOutCmd}]: ${log}`);
-            $("#progressCompiler").attr(
-              "style",
-              `width: ${(countOutCmd / 125) * 100}%`
+          //? ======/ no error >> continue /====== ?//
+          if (code == 0) {
+            player.play({ path: path.join(__dirname, "engine", "noti.wav") });
+            console.log(
+              `[SUCCESS] child process COMPILED exited with code ${code}`
             );
-          });
-          cmdUpload.stderr.on("data", (err) => {
-            console.error(`stderr: ${err}`);
-            countErrCmd = countErrCmd + 1;
-          });
-          cmdUpload.on("close", (code) => {
-            console.log(`[SUCCESS] child process UPLOADING exited with code ${code}`);
 
-            //?===================/when everything is done successfully/===================?//
-            $.ajax({
-              url: "/devices/updateGarden",
-              method: "POST",
-              data: {
-                gardenName: $("#formGarden").find("input[name='name']").val(),
-                latCoor: latCoor,
-                lngCoor: lngCoor,
-                place: $("#formGarden").find("input[name='locat']").val(),
-                // ssid:
-                //   $("#formGarden").find("input[name='ssid']").val() ||
-                //   $("#formGarden").find("select[name='ssid']").val(),
-                // psk: $("#formGarden").find("input[name='psk']").val(),
-                // baud: $("#formGarden").find("select[name='baud']").val(),
-                // port: $("#formGarden").find("select[name='port']").val(),
-              },
-              success: () => {
-                location.href = "/devices";
-              },
+
+
+            fs.writeFile(inoPath, espSrcCode, (err) => {
+              if (err) console.error(err);
+              else console.log("[INFO] Recovered .ino file");
             });
-          })
+
+            console.log("[INFO] Uploading ...");
+            let cmdUpload = spawn(
+              `cd ${buildFolderPath} & arduino-cli.exe upload --verbose --port ${port} --fqbn=${config[board]}${chosenBaudrate} ${buildFolderPath}`,
+              { shell: true },
+              (err) => {
+                if (err) {
+                  console.error(err);
+                  return;
+                }
+              }
+            );
+            // Async Listener
+            cmdUpload.stdout.on("data", (log) => {
+              console.log(log);
+            });
+            cmdUpload.stderr.on("data", (err) => { console.error(err); });
+            cmdUpload.on("close", (code) => {
+              //?=========/ when everything is done successfully /=========?//
+              if (code == 0) {
+                console.log(`[SUCCESS] child process UPLOADING exited with code ${code}`);
+                player.play({ path: path.join(__dirname, "engine", "noti.wav") });
+                console.log("[INFO] Adding New Device To Firebase ...");
+                $.ajax({
+                  url: "/devices/updateGarden",
+                  method: "POST",
+                  data: {
+                    gardenName: $("#formGarden").find("input[name='name']").val(),
+                    latCoor: latCoor,
+                    lngCoor: lngCoor,
+                    place: $("#formGarden").find("input[name='locat']").val(),
+                    // ssid:
+                    //   $("#formGarden").find("input[name='ssid']").val() ||
+                    //   $("#formGarden").find("select[name='ssid']").val(),
+                    // psk: $("#formGarden").find("input[name='psk']").val(),
+                    // baud: $("#formGarden").find("select[name='baud']").val(),
+                    // port: $("#formGarden").find("select[name='port']").val(),
+                  },
+                  success: () => {
+                    location.href = "/devices";
+                  },
+                });
+              }
+              else {
+                console.log(`[FAILED] child process UPLOADING exited with code ${code}`);
+                player.play({ path: path.join(__dirname, "engine", "noti.wav") });
+              }
+            })
+          }
+          else {
+            console.log(`[FAILED] child process COMPILED exited with code ${code}`);
+            player.play({ path: path.join(__dirname, "engine", "noti.wav") });
+          }
         });
         break;
 
+      //TODO: fix cmd macos like winodows
       case "darwin":
         //!======================/ MACOS /======================!//
         console.log("[INFO] MacOS Deteted");

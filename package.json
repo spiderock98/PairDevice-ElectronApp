@@ -21,7 +21,8 @@
   },
   "dependencies": {
     "jquery": "^3.5.1",
+    "node-wav-player": "^0.1.0",
     "python-shell": "^2.0.2",
-    "sweetalert2": "^10.3.5"
+    "sweetalert2": "^10.3.6"
   }
 }

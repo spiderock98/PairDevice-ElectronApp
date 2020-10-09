@@ -1,193 +1,240 @@
-#include <Arduino.h>
-#include <ESP8266WiFi.h>
-#include <ESP8266WiFiMulti.h>
-#include <ArduinoJson.h>
-#include <WebSocketsClient.h>
-#include <SocketIOclient.h>
+#define DEBUG false
+#define TEST false
 
+#include <Arduino.h>
+#include <WiFi.h>
+#include <WebSocketsClient.h>
+#include <ArduinoJson.h>
+#include "esp_camera.h"
+#define CAMERA_MODEL_AI_THINKER
+#if TEST == true
+#include "camera_pins.h"
+#else
+#include "include/camera_pins.h"
+#endif
+
+WebSocketsClient webSocket;
+
+bool flagEnCam = false;
+
+#if TEST == true
+#define STASSID "VIETTEL"
+#define STAPSK "Sherlock21vtag"
+// bApb0Ypwg5YszGanWOBKre39zlg1
+#define UID "bApb0Ypwg5YszGanWOBKre39zlg1"
+#define NODENAME "vuon xoai"
+#define HOST "192.168.1.4" //HOME local ip
+#define PORT 81
+#define LED_BUILTIN 33
+#define FLASH_BUILTIN 4
+#else
 #define STASSID "taikhoan"
 #define STAPSK "matkhau"
 // bApb0Ypwg5YszGanWOBKre39zlg1
 #define UID "dinhdanh"
-#define NODENAME "physicalID"
+#define NODENAME "physicalId"
 #define HOST "192.168.1.4" //HOME local ip
-#define PORT 8880
+#define PORT 81
+#define LED_BUILTIN 33
+#define FLASH_BUILTIN 4
+#endif
 
 const char *ssid = STASSID;
 const char *password = STAPSK;
 const char *uid = UID;
 const char *nodename = NODENAME;
 
-ESP8266WiFiMulti WiFiMulti;
-SocketIOclient socketIO;
-
-// 0: ON | 1: OFF
-bool preState = 0;
-
-#define USE_SERIAL Serial
-
-void socketIOEvent(socketIOmessageType_t type, uint8_t *payload, size_t length)
-{
-    switch (type)
-    {
-    case sIOtype_DISCONNECT:
-        // USE_SERIAL.printf("[IOc] Disconnected!\n");
-        break;
-    case sIOtype_CONNECT:
-        // USE_SERIAL.printf("[IOc] Connected to url: %s\n", payload);
-        break;
-
-        //!================//Incoming SocketIO Event//================!//
-    case sIOtype_EVENT:
-    {
-        // USE_SERIAL.printf("[IOc] get event: %s\n", payload);
-        DynamicJsonDocument doc(1024);
-        DeserializationError error = deserializeJson(doc, payload, length);
-        if (error)
-        {
-            // USE_SERIAL.print(F("deserializeJson() failed: "));
-            // USE_SERIAL.println(error.c_str());
-            return;
-        }
-        String eventName = doc[0];
-        String eventVal = doc[1];
-
-        if (eventName == String(nodename))
-        {
-            if (eventVal == "on")
-            {
-                digitalWrite(LED_BUILTIN, 0);
-                preState = 0;
-            }
-
-            else if (eventVal == "off")
-            {
-                digitalWrite(LED_BUILTIN, 1);
-                preState = 1;
-            }
-        }
-    }
-    break;
-
-    case sIOtype_ACK:
-        // USE_SERIAL.printf("[IOc] get ack: %u\n", length);
-        hexdump(payload, length);
-        break;
-    case sIOtype_ERROR:
-        // USE_SERIAL.printf("[IOc] get error: %u\n", length);
-        hexdump(payload, length);
-        break;
-    case sIOtype_BINARY_EVENT:
-        // USE_SERIAL.printf("[IOc] get binary: %u\n", length);
-        hexdump(payload, length);
-        break;
-    case sIOtype_BINARY_ACK:
-        // USE_SERIAL.printf("[IOc] get binary ack: %u\n", length);
-        hexdump(payload, length);
-        break;
-    }
-}
+String jsonOut;
+void webSocketEventHandle(WStype_t type, uint8_t *payload, size_t length);
 
 void setup()
 {
+#if DEBUG == true
+    Serial.begin(115200);
+    Serial.setDebugOutput(true);
+#endif
     pinMode(LED_BUILTIN, OUTPUT);
-    USE_SERIAL.begin(115200);
-    USE_SERIAL.setDebugOutput(true);
 
-    //!================//Internet Config//================!//
-    // for (uint8_t t = 4; t > 0; t--)
-    // {
-    //   // USE_SERIAL.printf("[SETUP] BOOT WAIT %d...\n", t);
-    //   // USE_SERIAL.flush();
-    //   delay(1000);
-    // }
-    // disable AP
-    if (WiFi.getMode() & WIFI_AP)
+    //!================/ AI-Thinker Camera Config /================!//
+    camera_config_t config;
+    config.ledc_channel = LEDC_CHANNEL_0;
+    config.ledc_timer = LEDC_TIMER_0;
+    config.pin_d0 = Y2_GPIO_NUM;
+    config.pin_d1 = Y3_GPIO_NUM;
+    config.pin_d2 = Y4_GPIO_NUM;
+    config.pin_d3 = Y5_GPIO_NUM;
+    config.pin_d4 = Y6_GPIO_NUM;
+    config.pin_d5 = Y7_GPIO_NUM;
+    config.pin_d6 = Y8_GPIO_NUM;
+    config.pin_d7 = Y9_GPIO_NUM;
+    config.pin_xclk = XCLK_GPIO_NUM;
+    config.pin_pclk = PCLK_GPIO_NUM;
+    config.pin_vsync = VSYNC_GPIO_NUM;
+    config.pin_href = HREF_GPIO_NUM;
+    config.pin_sscb_sda = SIOD_GPIO_NUM;
+    config.pin_sscb_scl = SIOC_GPIO_NUM;
+    config.pin_pwdn = PWDN_GPIO_NUM;
+    config.pin_reset = RESET_GPIO_NUM;
+    config.xclk_freq_hz = 20000000;
+    config.pixel_format = PIXFORMAT_JPEG;
+    //? init with high specs to pre-allocate larger buffers
+    if (psramFound())
     {
-        WiFi.softAPdisconnect(true);
+        // change format and quality here
+        config.frame_size = FRAMESIZE_VGA;
+        config.jpeg_quality = 40;
+        config.fb_count = 2;
     }
-    WiFiMulti.addAP(ssid, password);
-    //WiFi.disconnect();
-    while (WiFiMulti.run() != WL_CONNECTED)
+    else
     {
-        //TODO: add a buzzer
+        config.frame_size = FRAMESIZE_SVGA;
+        config.jpeg_quality = 12;
+        config.fb_count = 1;
+    }
+    //? camera init
+    esp_err_t err = esp_camera_init(&config);
+    if (err != ESP_OK)
+    {
+#if DEBUG == true
+        Serial.printf("Camera init failed with error 0x%x", err);
+#endif
+        return;
+    }
+
+    //!================/ Internet Config /================!//
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED)
+    {
         digitalWrite(LED_BUILTIN, 1);
         delay(100);
         digitalWrite(LED_BUILTIN, 0);
         delay(100);
     }
-
-    //!================//Init SocketIO Connection Config//================!//
+#if DEBUG == true
+    Serial.println("\nWiFi connected");
+    Serial.print("Camera Ready! Use 'http://");
+    Serial.print(WiFi.localIP());
+    Serial.println("' to connect");
+#endif
+    //!================/ Init JSON Garden Infomation /================!//
     DynamicJsonDocument doc(1024);
     JsonArray array = doc.to<JsonArray>();
-    array.add("regEsp");
+    // array.add("regEsp");
     JsonObject param1 = array.createNestedObject(); // add payload (parameters) for the event
+    //TODO: nếu nhấn btn thì pair | re-pair không thì ko regEsp
+    // param1["EVENT"] = "regESP";
+    param1["EVENT"] = "espEnCamera";
     param1["MAC"] = WiFi.macAddress();
     param1["IP"] = WiFi.localIP().toString();
     param1["SSID"] = WiFi.SSID();
     param1["PSK"] = WiFi.psk();
     param1["UID"] = uid;
-    String jsonOut;
     serializeJson(doc, jsonOut);
-
-    //!================//SocketIO Config//================!//
-    socketIO.begin(HOST, PORT);      // server address, port and URL
-    socketIO.onEvent(socketIOEvent); // event handler
-    while (!socketIO.isConnected())
-    {
-        socketIO.loop();
-        //TODO: add a buzzer
-        digitalWrite(LED_BUILTIN, 1);
-        delay(100); // cannot delay longer in socketIO.loop() thread
-        digitalWrite(LED_BUILTIN, 0);
-        delay(100); // cannot delay longer in socketIO.loop() thread
-    }
-    socketIO.sendEVENT(jsonOut); // Send event
+    //!================/ WebSocket Config /================!//
+    webSocket.begin(HOST, PORT, "/"); // server address, port and URL
+    webSocket.onEvent(webSocketEventHandle);
 }
 
-unsigned long messageTimestamp = 0;
 void loop()
 {
-    // uint64_t now = millis();
+    if (flagEnCam)
+    {
+        camera_fb_t *fb = esp_camera_fb_get();
+        if (!fb)
+        {
+#if DEBUG == true
+            Serial.println("[INFO] Capture failed");
+#endif
+            esp_camera_fb_return(fb);
+            return;
+        }
+        if (fb->format != PIXFORMAT_JPEG)
+        {
+#if DEBUG == true
+            Serial.println("[INFO] None-JPEG data");
+#endif
+            return;
+        }
+        webSocket.sendBIN(fb->buf, fb->len); // send message to server when Connected
 
-    // if (now - messageTimestamp > 100)
-    // {
-    //   messageTimestamp = now;
+        esp_camera_fb_return(fb);
+    }
 
-    //   DynamicJsonDocument doc(1024);
-    //   JsonArray array = doc.to<JsonArray>();
-    //   array.add("controller");
-    //   JsonObject param = array.createNestedObject();
-    //   if (analogRead(A0) > 1000)
-    //   {
-    //     // on | 0
-    //     if (!preState)
-    //     { // off
-    //       param["state"] = "off";
-    //       param["physicalName"] = nodename;
-    //       preState = 1;
-    //       digitalWrite(LED_BUILTIN, 1);
-    //       Serial.println("led OFF");
-    //       String jsonOut;
-    //       serializeJson(doc, jsonOut);
-    //       // Send event
-    //       socketIO.sendEVENT(jsonOut);
-    //     }
-    //     // off | 1
-    //     else
-    //     {
-    //       // on
-    //       param["state"] = "on";
-    //       param["physicalName"] = nodename;
-    //       preState = 0;
-    //       digitalWrite(LED_BUILTIN, 0);
-    //       Serial.println("led ON");
-    //       String jsonOut;
-    //       serializeJson(doc, jsonOut);
-    //       // Send event
-    //       socketIO.sendEVENT(jsonOut);
-    //     }
-    //   }
-    // }
-    socketIO.loop();
+    webSocket.loop();
+}
+
+//!================/ Func Define /================!//
+void webSocketEventHandle(WStype_t type, uint8_t *payload, size_t length)
+{
+    switch (type)
+    {
+    case WStype_DISCONNECTED:
+#if DEBUG == true
+        Serial.printf("[WSc] Disconnected!\n");
+#endif
+        break;
+
+    case WStype_CONNECTED:
+#if DEBUG == true
+        Serial.printf("[WSc] Connected to url: %s\n", payload);
+#endif
+        //? ====/ send message to server when Connected /==== ?//
+        webSocket.sendTXT(jsonOut);
+        break;
+
+        //!=====/ on recieve data /=====!//
+    case WStype_TEXT:
+#if DEBUG == true
+        Serial.printf("[WSc] get text: %s\n", payload);
+#endif
+        StaticJsonDocument<1024> recvDoc;
+        DeserializationError error = deserializeJson(recvDoc, payload, length);
+        //? Test if parsing succeeds.
+        if (error)
+        {
+#if DEBUG == true
+            Serial.print(F("[ERROR] deserializeJson() failed"));
+#endif
+            return;
+        }
+        else
+        {
+            // const char *eventName = recvDoc["EVENT"];
+            if (recvDoc["EVENT"] == "browserEnCam")
+            {
+                flagEnCam = true;
+
+                //!================/ Init JSON Garden Infomation /================!//
+                // String jsonEnCam;
+                // DynamicJsonDocument doc(1024);
+                // JsonArray array = doc.to<JsonArray>();
+                // JsonObject param1 = array.createNestedObject(); // add payload (parameters) for the event
+                // param1["EVENT"] = "handShakeEnCam";
+                // param1["MAC"] = WiFi.macAddress();
+                // param1["UID"] = uid;
+                // serializeJson(doc, jsonEnCam);
+                // webSocket.sendTXT(jsonEnCam);
+            }
+        }
+
+        //         if (recvDoc["code"] == "200")
+        //         {
+        //             //TODO: handshake first
+        //             flagEnCam = true;
+        // #if DEBUG == true
+        //             Serial.println("[INFO] Start Streaming ...");
+        // #endif
+        //         }
+
+        //? Fetch values.
+        // char json[] = "{\"sensor\":\"gps\",\"time\":1351824120,\"data\":[48.756080,2.302038]}";
+        // Most of the time, you can rely on the implicit casts.
+        // In other case, you can do doc["time"].as<long>();
+        // const char *sensor = recvDoc["sensor"];
+        // long time = recvDoc["time"];
+        // double latitude = recvDoc["data"][0];
+        // double longitude = recvDoc["data"][1];
+
+        break;
+    }
 }
