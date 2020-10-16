@@ -229,14 +229,14 @@ void setup()
         esp_err_t err = esp_camera_init(&config);
         if (err != ESP_OK)
         {
-            webSocket.sendTXT("Error Init Camera");
+            webSocket.sendTXT("[{'EVENT':'std','detail':'[Error] Init Camera'}]");
 #if DEBUG
             Serial.printf("Camera init failed with error 0x%x", err);
 #endif
             return;
         }
         else
-            webSocket.sendTXT("Init Camera Successfully");
+            webSocket.sendTXT("[{'EVENT':'std','detail':'[Success] Init Camera'}]");
     }
 
     //!================/ WebSocket Config /================!//
