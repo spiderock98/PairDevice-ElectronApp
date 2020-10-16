@@ -23,7 +23,7 @@ function createWindow() {
   mainWindow.webContents.openDevTools();
   // mainWindow.setMenu(null)
 
-  //!===================/Emitted when the window is closed/===================!//
+  //!===================/ Emitted when the window is closed /===================!//
   mainWindow.on("closed", function () {
     fs.copyFile(
       "./tmp/ArduinoBuilder-Recovery.ino",
