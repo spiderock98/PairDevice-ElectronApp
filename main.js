@@ -22,6 +22,18 @@ function createWindow() {
 
   mainWindow.webContents.openDevTools();
   // mainWindow.setMenu(null)
+  content.on("did-start-loading", () => {
+    fs.copyFile(
+      "./tmp/ArduinoBuilder-Recovery.ino",
+      "./ArduinoBuilder/ArduinoBuilder.ino",
+      (err) => {
+        if (err) console.log(err);
+        else {
+          console.log("[ElectronJS] Suddenly Stopped >> Recovery .ino File");
+        }
+      }
+    );
+  })
 
   //!===================/ Emitted when the window is closed /===================!//
   mainWindow.on("closed", function () {

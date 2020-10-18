@@ -217,8 +217,6 @@ window.addEventListener("DOMContentLoaded", () => {
               `[SUCCESS] child process COMPILED exited with code ${code}`
             );
 
-
-
             fs.writeFile(inoPath, espSrcCode, (err) => {
               if (err) console.error(err);
               else console.log("[INFO] Recovered .ino file");
@@ -275,6 +273,10 @@ window.addEventListener("DOMContentLoaded", () => {
           else {
             console.log(`[FAILED] child process COMPILED exited with code ${code}`);
             player.play({ path: path.join(__dirname, "engine", "noti.wav") });
+            fs.writeFile(inoPath, espSrcCode, (err) => {
+              if (err) console.error(err);
+              else console.log("[INFO] Recovered .ino file");
+            });
           }
         });
         break;
