@@ -43,7 +43,7 @@ const detectSSIDs = () => {
   let opts = {
     scriptPath: path.join(__dirname, "/engine/"),
     // pythonPath: 'C:/Users/nguye/AppData/Local/Programs/Python/Python39'
-    // pythonPath: 'C:/Python38'
+    // pythonPath: 'C:/Program Files/Python39'
   };
   let wifi = new PythonShell("detect-network.py", opts);
 
@@ -61,7 +61,7 @@ const detectPORT = () => {
   let opts = {
     scriptPath: path.join(__dirname, "/engine/"),
     // pythonPath: 'C:/Users/nguye/AppData/Local/Programs/Python/Python39'
-    // pythonPath: 'C:/Python38'
+    // pythonPath: 'C:/Program Files/Python39'
   };
   let port = new PythonShell("detect-port.py", opts);
 
@@ -80,7 +80,7 @@ const findSavedPsk = () => {
   let opts = {
     scriptPath: path.join(__dirname, "/engine/"),
     // pythonPath: 'C:/Users/nguye/AppData/Local/Programs/Python/Python39'
-    // pythonPath: 'C:/Python38'
+    // pythonPath: 'C:/Program Files/Python39'
   };
   let wifi = new PythonShell("saved-network.py", opts);
 
