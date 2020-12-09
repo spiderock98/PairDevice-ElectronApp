@@ -29,7 +29,7 @@ function createWindow() {
       (err) => {
         if (err) console.log(err);
         else {
-          console.log("[ElectronJS] Suddenly Stopped >> Recovery .ino File");
+          console.log("[ElectronJS] Did-Start-Loading >> Recovery .ino File");
         }
       }
     );
