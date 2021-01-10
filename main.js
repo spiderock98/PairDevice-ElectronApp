@@ -19,6 +19,8 @@ function createWindow() {
   });
   let content = mainWindow.webContents;
   content.loadURL("http://localhost:8880/");
+  // content.loadURL("http://115.76.144.9:8880/");
+
 
   mainWindow.webContents.openDevTools();
   // mainWindow.setMenu(null)

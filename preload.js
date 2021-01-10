@@ -157,6 +157,7 @@ window.addEventListener("DOMContentLoaded", () => {
     newGarden(uid, ssid, psk, port); // run python shell script
     player.play({ path: path.join(__dirname, "engine", "noti.wav") });
     console.log("[INFO] Adding New Device To Firebase ...");
+    // then send updateGarden POST request to server
     $.ajax({
       url: "/devices/updateGarden",
       method: "POST",

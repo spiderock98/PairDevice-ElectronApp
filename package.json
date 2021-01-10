@@ -17,12 +17,12 @@
   "author": "GitHub",
   "license": "CC0-1.0",
   "devDependencies": {
-    "electron": "^11.0.4"
+    "electron": "^11.1.1"
   },
   "dependencies": {
     "jquery": "^3.5.1",
     "node-wav-player": "^0.2.0",
     "python-shell": "^2.0.3",
-    "sweetalert2": "^10.12.3"
+    "sweetalert2": "^10.13.0"
   }
 }
