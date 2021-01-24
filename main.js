@@ -18,8 +18,9 @@ function createWindow() {
     },
   });
   let content = mainWindow.webContents;
-  content.loadURL("http://localhost:8880/");
-  // content.loadURL("http://115.76.144.9:8880/");
+  // content.loadURL("http://localhost:8880/");
+  content.loadURL("http://115.76.144.9/");
+  // content.loadURL("http://spiderock.xyz/");
 
 
   mainWindow.webContents.openDevTools();
