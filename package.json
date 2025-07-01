@@ -17,7 +17,7 @@
   "author": "GitHub",
   "license": "CC0-1.0",
   "devDependencies": {
-    "electron": "^22.3.25"
+    "electron": "^28.3.2"
   },
   "dependencies": {
     "jquery": "^3.5.1",
